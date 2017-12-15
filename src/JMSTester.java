@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 public class JMSTester
 {
 
-	private static String URL = "tcp://localhost:61616?minLargeMessageSize=250000";
+	private static String URL = "tcp://localhost:61616?jms.blobTransferPolicy.uploadUrl=http://localhost/upload";
 
 	private static String SUBJECT = "testQueue";
 	

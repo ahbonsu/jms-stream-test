@@ -1,15 +1,16 @@
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
-import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.ActiveMQSession;
+import org.apache.activemq.BlobMessage;
+
+
 
 public class JMSStreamSender implements Runnable
 {
@@ -37,14 +38,8 @@ public class JMSStreamSender implements Runnable
 			
 			MessageProducer producer = session.createProducer(session.createQueue(queue));
 			
-			BytesMessage message = session.createBytesMessage();
-			
-			//message.setStringProperty("fileName", file.getName());  //set file name
-			
-			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-			
-			message.setObjectProperty("JMS_AMQ_InputStream", bis);
-			
+			BlobMessage message = ((ActiveMQSession) session).createBlobMessage(file);
+
 			producer.send(message);
 			
 			System.out.println("SEND!");
@@ -52,7 +47,6 @@ public class JMSStreamSender implements Runnable
 			producer.close();
 			session.close();
 			con.close();
-			cf.close();
 			
 		} catch (JMSException e)
 		{

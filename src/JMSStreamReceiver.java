@@ -2,14 +2,20 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.ActiveMQSession;
+import org.apache.activemq.BlobMessage;
 
 
 public class JMSStreamReceiver implements Runnable
@@ -25,38 +31,42 @@ public class JMSStreamReceiver implements Runnable
 		this.file = file;
 	}
 	
-	public void receiveMessage()
+	public void receiveMessage() throws IOException
 	{
 		try
 		{
-			ActiveMQConnectionFactory cf = new ActiveMQConnectionFactory(url); //ctx.lookup
+			ActiveMQConnectionFactory cf = new ActiveMQConnectionFactory(url); //ctx.lookup 
+			
 			Connection con = cf.createConnection("admin", "admin");
 			con.start();
 			Session session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
 			
 			MessageConsumer consumer = session.createConsumer(session.createQueue(queue));
 			
-			BytesMessage message = (BytesMessage) consumer.receive(120000);
+			BlobMessage message = (BlobMessage) consumer.receive();
 			
-			//String fileName = message.getStringProperty("fileName");
+			InputStream is = message.getInputStream();
 			
-			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+			FileOutputStream fos = new FileOutputStream(file);
 			
-			message.setObjectProperty("JMS_AMQ_SaveStream", bos);
+			byte[] buffer = new byte[4* 1024];
+			int read = 0;
+			while((read = is.read(buffer))  != -1)
+			{
+				fos.write(buffer, 0, read);
+			}
+			
+			is.close();
+			fos.close();
 			
 			System.out.println("RECEIVED!");
-
+			
 			consumer.close();
 			session.close();
 			con.close();
-			cf.close();
 
 			
 		} catch (JMSException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (FileNotFoundException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -66,7 +76,14 @@ public class JMSStreamReceiver implements Runnable
 	@Override
 	public void run()
 	{
-		receiveMessage();
+		try
+		{
+			receiveMessage();
+		} catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 }
