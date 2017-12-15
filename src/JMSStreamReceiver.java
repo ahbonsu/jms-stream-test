@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.JMSException;
-import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
